@@ -62,6 +62,7 @@ const DriverPanel: React.FC<DriverPanelProps> = ({ onClose }) => {
   // --- FORM STATES ---
   const [driverNotes, setDriverNotes] = useState('');
   
+  // NÚMERO DE WHATSAPP ATUALIZADO
   const MANAGER_PHONE = "5571999202476"; 
 
   const getNowFormatted = () => {
@@ -416,7 +417,29 @@ const DriverPanel: React.FC<DriverPanelProps> = ({ onClose }) => {
   };
 
   const sendWhatsAppUpdate = (type: string) => {
-       const url = `https://wa.me/${MANAGER_PHONE}?text=${encodeURIComponent(`Update ${type} - ${shipment?.code}`)}`;
+       if (!shipment) return;
+       let text = "";
+       const now = getNowFormatted();
+       
+       if (type === 'start') {
+           text = `🚛 *INICIANDO VIAGEM* 🏁%0A%0A🆔 Carga: *${shipment.code}*%0A👤 Motorista: *${shipment.driverName}*%0A📍 Origem: ${shipment.origin}%0A🎯 Destino: ${shipment.destination}%0A%0A_Iniciando rastreamento satelital via App Rodovar_`;
+       } else if (type === 'finish') {
+           text = `✅ *ENTREGA FINALIZADA* 🎉%0A%0A🆔 Carga: *${shipment.code}*%0A📄 Canhoto Digital Gerado%0A📝 Assinado por: *${receiverName}*%0A🕒 Horário: ${now}%0A%0A_Missão cumprida com sucesso!_`;
+       } else if (type === 'problem') {
+           text = `🚨 *SOS / PROBLEMA* ⚠️%0A%0A🆔 Carga: *${shipment.code}*%0A📍 Local Atual: ${shipment.currentLocation.city}, ${shipment.currentLocation.state}%0A%0A_Solicito suporte imediato da central!_`;
+       } else if (type === 'update') {
+           text = `📍 *STATUS ATUALIZAÇÃO* 📡%0A%0A🆔 Carga: *${shipment.code}*%0A🌎 Local: *${shipment.currentLocation.city} - ${shipment.currentLocation.state}*%0A🕒 Hora: ${now}%0A%0A_Seguindo rota normalmente._`;
+       } else {
+           text = `ℹ️ *ATUALIZAÇÃO RODOVAR*%0A%0ACarga: ${shipment.code}%0AStatus: ${shipment.status}`;
+       }
+       
+       // Add Maps Link if location available
+       if (shipment.currentLocation.coordinates) {
+           const { lat, lng } = shipment.currentLocation.coordinates;
+           text += `%0A🗺️ Ver no Mapa: https://maps.google.com/?q=${lat},${lng}`;
+       }
+
+       const url = `https://wa.me/${MANAGER_PHONE}?text=${text}`;
        if(navigator.onLine) window.open(url, '_blank');
   };
 
@@ -478,7 +501,7 @@ const DriverPanel: React.FC<DriverPanelProps> = ({ onClose }) => {
                             value={code} 
                             onChange={e => setCode(e.target.value.toUpperCase())} 
                             className="w-full bg-black/40 border border-gray-600 rounded-xl p-4 text-white text-center font-mono text-lg uppercase tracking-widest focus:border-rodovar-yellow focus:ring-1 focus:ring-rodovar-yellow outline-none transition-all placeholder-gray-700" 
-                            placeholder="EX: RODO1234" 
+                            placeholder="EX: RODOVAR1234" 
                         />
                         <button 
                             onClick={startCodeVoiceInput}

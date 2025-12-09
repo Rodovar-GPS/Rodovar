@@ -146,12 +146,25 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, currentUser }) => {
   const [historyStatusFilter, setHistoryStatusFilter] = useState<'ALL' | 'DELIVERED' | 'TRANSIT'>('ALL');
 
 
+  // LOAD DATA BASED ON TAB
   useEffect(() => {
     loadShipments();
-    loadUsers();
-    loadDrivers();
+    loadDrivers(); // Load drivers for dropdowns
     loadSettings();
   }, []);
+
+  // Reload data when switching tabs to ensure lists are fresh
+  useEffect(() => {
+      if (activeTab === 'users' && isMaster) {
+          loadUsers();
+      }
+      if (activeTab === 'drivers') {
+          loadDrivers();
+      }
+      if (activeTab === 'shipments' || activeTab === 'history') {
+          loadShipments();
+      }
+  }, [activeTab, isMaster]);
 
   useEffect(() => {
     if (!isEditing && activeTab === 'shipments' && !code) {
@@ -181,9 +194,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, currentUser }) => {
   };
 
   const loadUsers = async () => {
-    if (isMaster) {
-      setUsers(await getAllUsers());
-    }
+    // Only load if master or admin
+    const data = await getAllUsers();
+    setUsers(data);
   };
 
   const loadDrivers = async () => {
@@ -423,24 +436,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, currentUser }) => {
             password: newPassword,
             role: newUserRole
         });
+        // Always reload users to refresh list
+        await loadUsers();
+        
         if (success) {
-            setNewUsername('');
-            setNewPassword('');
-            setEditingUser(null);
             setUserMsg('✅ Usuário salvo com sucesso.');
-            await loadUsers();
-            setTimeout(() => setUserMsg(''), 3000);
         } else {
-            // If editing, success might be false if username exists, but saveUser logic handles update if pwd changed
-            // Actually storageService.saveUser returns false if exists and no change. 
-            // Let's reload anyway.
-            await loadUsers();
             setUserMsg('✅ Usuário atualizado.');
-            setNewUsername('');
-            setNewPassword('');
-            setEditingUser(null);
-            setTimeout(() => setUserMsg(''), 3000);
         }
+        setNewUsername('');
+        setNewPassword('');
+        setEditingUser(null);
+        setTimeout(() => setUserMsg(''), 3000);
     } catch (error) {
         setUserMsg('Erro ao salvar.');
     }
@@ -666,7 +673,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onClose, currentUser }) => {
                  <div className="p-4 space-y-4">
                      <div className="p-4 rounded-xl shadow-lg" style={{ backgroundColor: cardColor }}>
                          <div className="flex justify-between items-center mb-2">
-                             <span className="font-mono font-bold" style={{ color: primaryColor }}>RODO-1234</span>
+                             <span className="font-mono font-bold" style={{ color: primaryColor }}>RODOVAR1234</span>
                              <span className="text-[8px] bg-green-500/20 text-green-400 px-2 py-1 rounded">EM TRÂNSITO</span>
                          </div>
                          <p className="text-xs font-bold" style={{ color: textColor }}>São Paulo - SP</p>
